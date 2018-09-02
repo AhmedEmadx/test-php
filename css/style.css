@@ -1,0 +1,20 @@
+#firstname {
+    width: 300px;
+    height: 35px;
+}
+#lastname {
+    width: 300px;
+    height: 35px;
+}
+#email {
+	width: 300px;
+	height: 35px;
+}
+#password {
+	width: 300px;
+	height: 35px;
+}
+#passagain {
+	width: 300px;
+	height: 35px;
+}

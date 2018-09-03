@@ -1,13 +1,83 @@
 <?php
-   if( $_POST["firestname"] || $_POST["lastname"] || $_POST["email"] || $_POST["password"] || $_POST["passagain"] || $_POST["man-woman"]) {
-      if (preg_match("/[^A-Za-z'-]/",$_POST['name'] )) {
-         die ("invalid name and name should be alpha");
-      }
-      echo "Welcome ". $_POST['name']. "<br />";
-      echo "You are ". $_POST['age']. " years old.";
-      
-      exit();
-   }
+require_once 'core/init.php';
+
+if(Input::exists()) {
+	if(Token::check(Input::get('token'))) {
+		$validate = new Validate();
+		$validation = $validate->check($_POST, array(
+			'firstname' => array(
+				'required' 	=> true,
+				'escape' 	=> true,
+				'min' 		=> 2,
+				'max' 		=> 20,
+				'unique' 	=> 'users'
+			),
+			'lastname' => array(
+				'required' 	=> true,
+				'escape' 	=> true,
+				'min' 		=> 2,
+				'max' 		=> 50
+				'unique' 	=> 'users'
+			),
+			'email' => array(
+				'required' => true,
+				'escape' => true,
+				'email' => true,
+				'unique' => 'users'
+			),
+			'password' => array(
+				'required' 	=> true,
+				'min' 		=>2
+			),
+			'passagain' => array(
+				'required' 	=> true,
+				'matches' 	=> 'password'
+			)
+		));
+
+		if($validation->passed()) {
+			$user = new User();
+
+			$salt = Hash::salt(32);
+
+			try {
+				$user->create(array(
+					'firstname' 	=> Input::get('username'),
+					'password' 	=> Hash::make(Input::get('password'), $salt),
+					'email' 	=> urldecode(Input::get('email')),
+					'email_code'=> Input::get('email_code'),
+					'salt' 		=> $salt,
+					'lastname' 		=> Input::get('lastname')
+				));
+
+				$from = 'info@test.php.com';
+				$name = 'Test';
+				$to = Input::get('email');
+				$subject = 'Test Email verification';
+				$body = 'Hello, <strong>'.Input::get('name').'</strong>,
+				<br><br>
+				We need to make sure you are human. Please verify your email and get started using your Website account.
+				<br><br>
+				<center><a href="'. Config::get('url/home') .'activate.php?email='.urldecode(Input::get('email')).'&email_code='.Input::get('email_code').'">Click here to activate your account!</a></center>
+				<br><br>
+				Thank you very much';
+				
+				User::sendEmail($from, $name, $to, $subject, $body);
+
+				Session::flash('info', 'You have been registered, Please activate your account now!');
+				Redirect::to('./');
+
+			} catch(Exception $e) {
+				die($e->getMessage());
+			}
+		} else {
+			$regErrors = array();
+			foreach ($validation->errors() as $error) {
+				$regErrors[] = $error;
+			}
+		}
+	}
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -38,12 +108,6 @@
 						<input type="password" name="passagain"
 						id="passagain" placeholder="Password (again)">
 					</label><br>
-					<label>
-                       <input type="radio" name="man-woman" id="man">man
-            	    </label>
-                    <label>
-                       <input type="radio" name="man-woman" id="woman">woman
-                    </label><br>
 					<button type="submit" id="button">sign up</button>
 				</form>
 			</div>
